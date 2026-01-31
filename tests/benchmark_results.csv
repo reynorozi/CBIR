@@ -1,0 +1,4 @@
+method,metric,k,n_planes,n_tables,avg_time_sec,avg_recall
+knn,cosine,10,,,0.000400,
+knn,euclidean,10,,,0.011088,
+lsh,cosine_rerank,10,12,2,0.000156,0.29
