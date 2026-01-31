@@ -1,0 +1,5 @@
+caltech101/
+uploaded_images/
+__pycache__/
+**/__pycache__/
+*.pyc

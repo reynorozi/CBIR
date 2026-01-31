@@ -1,68 +1,81 @@
-    import uuid
-    import json
-
-    class VectorEntity:
-        def __init__(self, vector: list, labels=None, image_path: str = "", id=None):
-            self.id = id or str(uuid.uuid4())
-            self.vector = vector
-            self.labels = labels or []
-            self.image_path = image_path
-            self.metadata = {"labels": self.labels}
+import uuid
+import json
 
 
-        def serialize(self) -> bytes:
+class VectorEntity:
+    def __init__(self, vector: list, labels=None, image_path: str = "", id=None):
+        self.id = id or str(uuid.uuid4())
+        self.vector = vector  # list of float
+        self.labels = labels or []
+        self.image_path = image_path
 
 
-            import struct
-            vec_bytes = b"".join([struct.pack("f", f) for f in self.vector])
-            metadata_bytes = json.dumps(self.metadata).encode("utf-8")
-            image_path_bytes = self.image_path.encode("utf-8")
-            id_bytes = self.id.encode("utf-8")
+        self.metadata = {"labels": self.labels}
 
+    def serialize(self) -> bytes:
+        """
+        Serialize entity to bytes for storage
+        """
+        import struct
 
-            data = (
-                len(id_bytes).to_bytes(2, "little") + id_bytes +
-                len(vec_bytes).to_bytes(4, "little") + vec_bytes +
-                len(metadata_bytes).to_bytes(4, "little") + metadata_bytes +
-                len(image_path_bytes).to_bytes(2, "little") + image_path_bytes
-            )
-            return data
+        # تبدیل float ها به بایت دقیق (۴ بایت برای هر float)
+        vec_bytes = b"".join([struct.pack("f", f) for f in self.vector])
 
-        @staticmethod
-        def deserialize(data: bytes, vector_dim: int):
-            import struct
-            offset = 0
+        metadata_bytes = json.dumps(self.metadata).encode("utf-8")
+        image_path_bytes = self.image_path.encode("utf-8")
+        id_bytes = self.id.encode("utf-8")
 
+        # ذخیره طول هر بخش + داده‌ها
+        data = (
+            len(id_bytes).to_bytes(2, "little") + id_bytes +
+            len(vec_bytes).to_bytes(4, "little") + vec_bytes +
+            len(metadata_bytes).to_bytes(4, "little") + metadata_bytes +
+            len(image_path_bytes).to_bytes(2, "little") + image_path_bytes
+        )
+        return data
 
-            id_len = int.from_bytes(data[offset:offset+2], "little")
-            offset += 2
-            id_bytes = data[offset:offset+id_len]
-            offset += id_len
-            entity_id = id_bytes.decode("utf-8")
+    @staticmethod
+    def deserialize(data: bytes, vector_dim: int):
+        import struct
 
-            vec_len = int.from_bytes(data[offset:offset+4], "little")
-            offset += 4
-            vector = []
-            for i in range(0, vec_len, 4):
-                vector.append(struct.unpack("f", data[offset + i:offset + i + 4])[0])
-            offset += vec_len
+        offset = 0
 
-            meta_len = int.from_bytes(data[offset:offset+4], "little")
-            offset += 4
-            metadata_bytes = data[offset:offset+meta_len]
-            offset += meta_len
-            metadata = json.loads(metadata_bytes.decode("utf-8"))
+        # خواندن ID
+        id_len = int.from_bytes(data[offset:offset + 2], "little")
+        offset += 2
+        entity_id = data[offset:offset + id_len].decode("utf-8")
+        offset += id_len
 
-            img_len = int.from_bytes(data[offset:offset+2], "little")
-            offset += 2
-            image_path_bytes = data[offset:offset+img_len]
-            offset += img_len
-            image_path = image_path_bytes.decode("utf-8")
+        # خواندن Vector
+        vec_len = int.from_bytes(data[offset:offset + 4], "little")
+        offset += 4
 
-            entity = VectorEntity(vector=vector, labels=metadata.get("labels", []),
-                                  image_path=image_path, id=entity_id)
-            entity.metadata = metadata
-            return entity
+        vector = []
+        for i in range(0, vec_len, 4):
+            vector.append(struct.unpack("f", data[offset + i:offset + i + 4])[0])
+        offset += vec_len
 
+        # خواندن Metadata
+        meta_len = int.from_bytes(data[offset:offset + 4], "little")
+        offset += 4
 
+        metadata = json.loads(data[offset:offset + meta_len].decode("utf-8"))
+        offset += meta_len
+
+        # خواندن Image Path
+        img_len = int.from_bytes(data[offset:offset + 2], "little")
+        offset += 2
+
+        image_path = data[offset:offset + img_len].decode("utf-8")
+        offset += img_len
+
+        # ساخت entity
+        entity = VectorEntity(
+            vector=vector,
+            labels=metadata.get("labels", []),
+            image_path=image_path,
+            id=entity_id
+        )
+        entity.metadata = metadata
+        return entity
 
