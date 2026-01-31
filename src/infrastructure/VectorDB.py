@@ -7,13 +7,13 @@ from core.VectorEntity import VectorEntity
 
 class VectorDB:
     def __init__(self, db_file: Path, vector_dim=512):
-        self.db_file = Path(db_file)# مسیر فایل
-        self.vector_dim = vector_dim # ابعاد بردار
-        self.lock = threading.Lock() # برای اینکه چند ترد روی بردر کار نکنن ی لاک تعریف میکنمیم
-        self.entities = []  # in-memory cache
+        self.db_file = Path(db_file)
+        self.vector_dim = vector_dim
+        self.lock = threading.Lock()
+        self.entities = []
         self.conn = None
-        self._init_sqlite() # ساخت تیبل اس کیو ال
-        self.load() # لود کردن
+        self._init_sqlite()
+        self.load()
 
     def add_entity(self, entity: VectorEntity):
         with self.lock:
@@ -79,12 +79,12 @@ class VectorDB:
             """
         )
         self.conn.commit()
-# تبدیل وکتور بلاب به فلوت
+
     def _pack_vector(self, vector):
         if len(vector) == 0:
             return b""
         return struct.pack(f"{len(vector)}f", *vector)
-# و بالعکس
+
     def _unpack_vector(self, blob):
         if not blob:
             return []
@@ -102,15 +102,15 @@ class VectorDB:
         return entities
 
 
-# گرفتن همه وکتور های تیبل
+
     @property
     def vectors(self):
         return [e.vector for e in self.entities]
-# گرفتن همه ایدی ها
+
     @property
     def ids(self):
         return [e.id for e in self.entities]
-# گرفتن همه ادرس ها
+
     @property
     def image_paths(self):
         return [e.image_path for e in self.entities]

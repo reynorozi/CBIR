@@ -77,7 +77,7 @@ def main():
     ids.append(rel_str)
     np.save(ids_path, np.array(ids, dtype=object))
 
-    print("✅ Added image")
+    print("Added image")
     print("image:", img_path)
     print("stored path:", rel_str)
     print("raw embeddings:", raw.shape, "norm embeddings:", norm.shape)

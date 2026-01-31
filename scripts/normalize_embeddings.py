@@ -10,6 +10,6 @@ X /= (np.linalg.norm(X, axis=1, keepdims=True) + 1e-12)
 
 np.save(OUTPUT_PATH, X)
 
-print("✅ saved:", OUTPUT_PATH)
+print("saved:", OUTPUT_PATH)
 print("shape:", X.shape, "dtype:", X.dtype)
 print("first 5 lengths:", np.linalg.norm(X[:5], axis=1))
