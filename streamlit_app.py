@@ -16,7 +16,6 @@ from infrastructure.VectorDB import VectorDB
 from search.KNN import BruteForceKNN
 from search.LSH import RandomHyperplaneLSH
 
-# ---------------- Helpers ----------------
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True, parents=True)
 DB_FILE = DATA_DIR / "vector_store.sqlite"
@@ -25,13 +24,9 @@ def normalize_path(p: str) -> str:
     return p.replace("\\", "/")
 
 def init_db_if_needed():
-    """اگر دیتابیس وجود ندارد، از npy ها بساز"""
     if not DB_FILE.exists():
-        print("Initializing VectorDB from npy embeddings...")
         vectors_file = DATA_DIR / "caltech101_embeddings_norm.npy"
         ids_file = DATA_DIR / "caltech101_image_ids.npy"
-        if not vectors_file.exists() or not ids_file.exists():
-            raise FileNotFoundError("Files for initialization not found in data/")
         vectors = np.load(vectors_file).astype(np.float32)
         image_ids = np.load(ids_file, allow_pickle=True).tolist()
         db = VectorDB(DB_FILE)
@@ -39,14 +34,10 @@ def init_db_if_needed():
             img_path = normalize_path(str(image_ids[i]))
             entity = VectorEntity(vector=vec.tolist(), image_path=img_path)
             db.add_entity(entity)
-        print("✅ VectorDB initialized from npy embeddings")
-    else:
-        print("✅ VectorDB already exists")
     return VectorDB(DB_FILE)
 
 db = init_db_if_needed()
 
-# ---------------- Model ----------------
 def load_model():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     weights = ResNet18_Weights.DEFAULT
@@ -81,15 +72,12 @@ def pca_2d(X: np.ndarray) -> np.ndarray:
     if X.ndim != 2 or X.shape[0] == 0:
         return np.zeros((0, 2), dtype=np.float32)
     X = X - X.mean(axis=0, keepdims=True)
-    # Use SVD for stable 2D projection without extra deps
     _, _, vt = np.linalg.svd(X, full_matrices=False)
     return X @ vt[:2].T
 
-# ---------------- Streamlit GUI ----------------
 st.set_page_config(page_title="Caltech101 Vector DB Search", layout="wide")
-st.title("🔎 Caltech101 Image Similarity Search with CRUD")
+st.title("Caltech101 Image Similarity Search with CRUD")
 
-# ---------------- Sidebar: Upload ----------------
 st.sidebar.header("Upload & Add New Image")
 uploaded_file = st.sidebar.file_uploader("Upload image", type=["jpg","png","jpeg"])
 label_input = st.sidebar.text_input("Labels (comma separated)")
@@ -104,11 +92,10 @@ if st.sidebar.button("Add Image"):
         img.save(img_path)
         entity = VectorEntity(vector=vec, labels=labels, image_path=str(img_path))
         db.add_entity(entity)
-        st.sidebar.success(f"✅ Image added with ID: {entity.id}")
+        st.sidebar.success(f"Image added with ID: {entity.id}")
     else:
         st.sidebar.warning("Upload an image first.")
 
-# ---------------- Sidebar: Edit/Delete ----------------
 st.sidebar.header("Edit/Delete Uploaded Images")
 uploaded_entities = [e for e in db.entities if str(e.image_path).startswith("uploaded_images")]
 
@@ -120,17 +107,16 @@ if uploaded_entities:
     )
     if st.sidebar.button("Delete Image"):
         db.delete_entity(selected_id)
-        st.sidebar.success("✅ Image deleted")
+        st.sidebar.success("Image deleted")
 
     new_labels = st.sidebar.text_input("Edit Labels (comma separated)")
     if st.sidebar.button("Update Labels"):
         labels_list = [l.strip() for l in new_labels.split(",")] if new_labels else []
         db.update_entity(selected_id, new_labels=labels_list)
-        st.sidebar.success("✅ Labels updated")
+        st.sidebar.success("Labels updated")
 else:
     st.sidebar.info("No images uploaded by you yet.")
 
-# ---------------- Search ----------------
 mode = st.radio("Search mode", ["Brute-force KNN (exact)", "LSH + cosine rerank (approx)"])
 k = st.slider("k", 1, 20, 10)
 query_mode = st.radio("Query source", ["Dataset index", "Upload image"])
@@ -198,7 +184,7 @@ st.divider()
 st.subheader("Embedding Scatter (PCA 2D)")
 show_scatter = st.checkbox("Show scatter plot", value=False)
 if show_scatter:
-    max_points = st.slider("Max points", min_value=200, max_value=5000, value=1500, step=100)
+    max_points = st.slider("Max points", min_value=200, max_value=9000, value=1500, step=100)
     X_np = np.array(db.vectors, dtype=np.float32)
     if X_np.size == 0:
         st.info("Database is empty.")
