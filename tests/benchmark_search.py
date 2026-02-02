@@ -27,7 +27,6 @@ def benchmark_lsh(X, queries, k=10, n_planes=12, n_tables=2):
     lsh = RandomHyperplaneLSH(n_planes=n_planes, n_tables=n_tables)
     lsh.build(X)
 
-    # ground truth (cosine)
     knn = BruteForceKNN(X, metric="cosine")
 
     total_time = 0.0
@@ -103,7 +102,7 @@ def main():
     print("Big-O (theoretical):")
     print("  Brute-force kNN: O(N*d) per query")
     print("  LSH: O(n_planes*d*n_tables) to hash + candidates*r for rerank (sub-linear expected in practice)")
-    print(f"✅ Wrote CSV for Excel: {out_csv}")
+    print(f"Wrote CSV for Excel: {out_csv}")
 
 
 if __name__ == "__main__":

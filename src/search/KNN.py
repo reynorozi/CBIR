@@ -23,5 +23,5 @@ class BruteForceKNN:
             idx = np.argsort(dists)[:k]
             scores = dists[idx]
         else:
-            raise ValueError(f"Unsupported metric: {self.metric}")
+            raise ValueError( {self.metric})
         return idx, scores

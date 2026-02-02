@@ -3,14 +3,12 @@ from collections import defaultdict
 from typing import List, Set
 
 class RandomHyperplaneLSH:
-    """
-    Simple LSH using random hyperplanes
-    """
+
     def __init__(self, n_planes: int = 16, n_tables: int = 1, seed: int = 42):
         self.n_planes = n_planes
         self.n_tables = n_tables
         self.rng = np.random.default_rng(seed)
-        self.tables = []  # list of (planes, buckets)
+        self.tables = []  
 
     def _signature(self, planes: np.ndarray, v: np.ndarray) -> tuple:
         proj = planes @ v
