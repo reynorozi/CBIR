@@ -1,4 +1,4 @@
-# CRIB
+# CBIR
 
 ## How to Run
 
